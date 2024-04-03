@@ -1,4 +1,4 @@
-package cnpj
+package validate
 
 import (
 	"fmt"
