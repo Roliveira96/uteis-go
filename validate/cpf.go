@@ -6,37 +6,31 @@ import (
 	"strconv"
 )
 
-// ValidateCPFs valida uma lista de CPFs
+// ValidateCPFs validates a list of CPFs
 func ValidateCPFs(cpfs []string) map[string]bool {
 	validityMap := make(map[string]bool)
 	for _, cpf := range cpfs {
-		cpf = AddCPFMascara(cpf)
+		cpf = AddCPFMask(cpf)
 		validityMap[cpf] = ValidateCPF(cpf)
 	}
 	return validityMap
 }
 
-// RemoveCaracteresEspeciais remove todos os caracteres não numéricos de uma string.
-func RemoveCaracteresEspeciais(s string) string {
-	re := regexp.MustCompile(`\D`)
-	return re.ReplaceAllString(s, "")
-}
-
-// ValidateCPF valida um número de CPF, pode ser formatado ou não formatado.
+// ValidateCPF validates a CPF number, it can be formatted or unformatted.
 func ValidateCPF(cpf string) bool {
-	cpf = RemoveCaracteresEspeciais(cpf)
-	if len(cpf) != 11 || isSequenciaNumerica(cpf) {
+	cpf = RemoveSpecialCharacters(cpf)
+	if len(cpf) != 11 || isNumericSequence(cpf) {
 		return false
 	}
 
-	numeros := StringParaDigitos(cpf)
-	digito1, digito2 := CalcularDigitoVerificadorCPF(numeros)
+	numbers := StringToDigits(cpf)
+	digit1, digit2 := CalculateCPFCheckDigit(numbers)
 
-	return digito1 == strconv.Itoa(numeros[9]) && digito2 == strconv.Itoa(numeros[10])
+	return digit1 == strconv.Itoa(numbers[9]) && digit2 == strconv.Itoa(numbers[10])
 }
 
-// isSequenciaNumerica verifica se o número de CPF é uma sequência numérica e retorna true se for.
-func isSequenciaNumerica(cpf string) bool {
+// isNumericSequence checks if the CPF number is a numeric sequence and returns true if it is.
+func isNumericSequence(cpf string) bool {
 	for i := 1; i < len(cpf); i++ {
 		if cpf[i] != cpf[0] {
 			return false
@@ -45,44 +39,33 @@ func isSequenciaNumerica(cpf string) bool {
 	return true
 }
 
-// StringParaDigitos converte uma string em uma fatia de dígitos como inteiros.
-func StringParaDigitos(cpf string) []int {
-	var digitos []int
-	for _, char := range cpf {
-		if digito, err := strconv.Atoi(string(char)); err == nil {
-			digitos = append(digitos, digito)
-		}
-	}
-	return digitos
+// CalculateCPFCheckDigit calculates the verification check digits (digit1 and digit2) for CPF.
+func CalculateCPFCheckDigit(numbers []int) (string, string) {
+	firstFactors := []int{10, 9, 8, 7, 6, 5, 4, 3, 2}
+	secondFactors := []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2}
+
+	digit1 := CalculateCheckDigit(numbers[0:9], firstFactors)
+	digit2 := CalculateCheckDigit(numbers[0:10], secondFactors)
+
+	return digit1, digit2
 }
 
-// CalcularDigitoVerificadorCPF calcula os dígitos de verificação do CPF (digito1 e digito2)
-func CalcularDigitoVerificadorCPF(numeros []int) (string, string) {
-	primeirosFatores := []int{10, 9, 8, 7, 6, 5, 4, 3, 2}
-	segundosFatores := []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2}
-
-	digito1 := CalcularDigito(numeros[0:9], primeirosFatores)
-	digito2 := CalcularDigito(numeros[0:10], segundosFatores)
-
-	return digito1, digito2
-}
-
-// CalcularDigito calcula um dígito de verificação.
-func CalcularDigito(numeros []int, fatores []int) string {
+// CalculateCheckDigit calculates a verification digit.
+func CalculateCheckDigit(numbers []int, factors []int) string {
 	var total int
-	for i, digito := range numeros {
-		total += digito * fatores[i]
+	for i, digit := range numbers {
+		total += digit * factors[i]
 	}
-	resto := total % 11
-	if resto < 2 {
+	remainder := total % 11
+	if remainder < 2 {
 		return "0"
 	}
-	return strconv.Itoa(11 - resto)
+	return strconv.Itoa(11 - remainder)
 }
 
-// AddCPFMascara adiciona uma máscara a uma string de CPF (xxx.xxx.xxx-xx)
-func AddCPFMascara(cpf string) string {
-	if HasCPFMascara(cpf) {
+// AddCPFMask adds a mask to a CPF string (xxx.xxx.xxx-xx).
+func AddCPFMask(cpf string) string {
+	if HasCPFMask(cpf) {
 		return cpf
 	}
 
@@ -93,8 +76,8 @@ func AddCPFMascara(cpf string) string {
 	return fmt.Sprintf("%s.%s.%s-%s", cpf[0:3], cpf[3:6], cpf[6:9], cpf[9:11])
 }
 
-// HasCPFMascara verifica se uma string já tem a máscara de CPF aplicada.
-func HasCPFMascara(cpf string) bool {
-	mascaraPadrao := regexp.MustCompile(`^\d{3}\.\d{3}\.\d{3}-\d{2}$`)
-	return mascaraPadrao.MatchString(cpf)
+// HasCPFMask checks if a string already has the CPF mask applied.
+func HasCPFMask(cpf string) bool {
+	maskPattern := regexp.MustCompile(`^\d{3}\.\d{3}\.\d{3}-\d{2}$`)
+	return maskPattern.MatchString(cpf)
 }
